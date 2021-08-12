@@ -71,17 +71,31 @@ local function show_scope()
   return false
 end
 
+local function check_ft()
+  local current_bufnr = vim.api.nvim_win_get_buf(0)
+  if vim.api.nvim_buf_get_option(current_bufnr, "buftype") == "terminal" then
+    return false
+  end
+  return true
+end
+
 function Snipe.setup(options)
   config.setup(options)
 end
 
 function Snipe.snipe()
+  if not check_ft() then
+    return
+  end
   if not show_scope() then
     active_id = popup.close(active_id)
   end
 end
 
 function Snipe.close()
+  if not check_ft() then
+    return
+  end
   active_id = popup.close(active_id)
 end
 

@@ -1,7 +1,14 @@
+fun! Snipe()
+  lua require('snipe').snipe()
+endfunction
+
+fun! SnipeClose()
+  lua require('snipe').close()
+endfunction
+
 augroup Snipe
   autocmd!
-  autocmd CursorMoved * lua require('snipe').snipe()
-  autocmd CursorMovedI * lua require('snipe').snipe()
-  autocmd BufLeave,BufWinLeave * lua require('snipe').close()
+  autocmd CursorMoved * call Snipe()
+  autocmd BufLeave,BufWinLeave * call SnipeClose()
 augroup END
 
