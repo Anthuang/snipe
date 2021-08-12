@@ -13,6 +13,7 @@ local targets = {
   'function_definition',
   'local_function',
   'class_declaration',
+  'class_definition',
 }
 
 --- Close current scope window, if any
@@ -52,14 +53,6 @@ local function create_scope_popup()
       local row, _, _ = parent:start()
       local signature = ts_utils.get_node_text(parent, 0)[1]
 
-      if active_id then
-        local current_signature = get_current_signature()
-        current_signature = string.gsub(current_signature, '^%s*(.-)%s*$', '%1')
-        if current_signature == signature then
-          return true
-        end
-      end
-
       -- Don't show scope if first line
       if vim.fn.winline() == 1 then
         return false
@@ -68,6 +61,15 @@ local function create_scope_popup()
       local pos = vim.api.nvim_win_get_cursor(0)
       if pos[1] - vim.fn.winline() <= row then
         return false
+      end
+
+      -- Check if the signature is the same
+      if active_id then
+        local current_signature = get_current_signature()
+        current_signature = string.gsub(current_signature, '^%s*(.-)%s*$', '%1')
+        if current_signature == signature then
+          return true
+        end
       end
 
       local win_pos = vim.api.nvim_win_get_position(0)
