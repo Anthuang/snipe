@@ -1,7 +1,6 @@
-local Window = require("plenary.window")
-local popup = require('popup')
 local ts_utils = require('nvim-treesitter.ts_utils')
-local ts_parsers = require('nvim-treesitter.parsers')
+
+local popup = require('snipe.popup')
 
 local Snipe = {}
 
@@ -15,18 +14,6 @@ local targets = {
   'class_declaration',
   'class_definition',
 }
-
---- Close current scope window, if any
-local function close()
-  if active_id then
-    Window.try_close(active_id, false)
-    if active_id and vim.api.nvim_win_is_valid(active_id + 1) then
-      -- popup seems to create two windows
-      Window.try_close(active_id + 1, false)
-    end
-    active_id = nil
-  end
-end
 
 --- Gets the signature in the current scope window, if any
 local function get_current_signature()
@@ -72,36 +59,7 @@ local function create_scope_popup()
         end
       end
 
-      local win_pos = vim.api.nvim_win_get_position(0)
-      local width = vim.api.nvim_win_get_width(0)
-
-      -- Close current active scope window before creating
-      close()
-      active_id, _ = popup.create(signature, {
-        ['line'] = win_pos[1],
-        ['col'] = win_pos[2] + 1,
-        ['minheight'] = 0,
-        ['minwidth'] = width - 1,
-        ['maxheight'] = 1,
-        ['maxwidth'] = width - 1,
-        ['border'] = {0, 0, 0, 1},
-        ['borderchars'] = {'▏'},
-        ['padding'] = {0, 1, 0, 1},
-        ['enter'] = false,
-      })
-      vim.api.nvim_win_set_option(active_id, 'wrap', false)
-      vim.api.nvim_win_set_option(active_id, 'number', false)
-
-      -- Add highlighting, using treesitter if possible
-      local current_bufnr = vim.api.nvim_win_get_buf(0)
-      local bufnr = vim.api.nvim_win_get_buf(active_id)
-      local ft = vim.api.nvim_buf_get_option(current_bufnr, 'ft')
-
-      local lang = ts_parsers.ft_to_lang(ft)
-      if ts_parsers.has_parser(lang) then
-        vim.treesitter.highlighter.new(ts_parsers.get_parser(bufnr, lang))
-      end
-      vim.api.nvim_buf_set_option(bufnr, 'syntax', ft)
+      active_id = popup.create_popup(signature)
       return true
     end
     parent = parent:parent()
@@ -111,12 +69,12 @@ end
 
 function Snipe.snipe()
   if not create_scope_popup() then
-    close()
+    active_id = popup.close(active_id)
   end
 end
 
 function Snipe.close()
-  close()
+  active_id = popup.close(active_id)
 end
 
 return Snipe
