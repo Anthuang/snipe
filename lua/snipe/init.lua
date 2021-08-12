@@ -39,7 +39,7 @@ function Snipe.snipe()
 
   while parent and not (parent:type() == 'program') do
     if vim.tbl_contains(targets, parent:type()) then
-      local row, _, col = parent:start()
+      local row, _, _ = parent:start()
       local signature = ts_utils.get_node_text(parent, 0)[1]
 
       -- Don't show scope if first line
