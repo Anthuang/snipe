@@ -1,6 +1,7 @@
 local Window = require("plenary.window")
-local ts_utils = require('nvim-treesitter.ts_utils')
 local popup = require('popup')
+local ts_utils = require('nvim-treesitter.ts_utils')
+local ts_parsers = require('nvim-treesitter.parsers')
 
 local Snipe = {}
 
@@ -52,14 +53,15 @@ function Snipe.snipe()
       end
 
       local win_pos = vim.api.nvim_win_get_position(0)
+      local width = vim.api.nvim_win_get_width(0)
 
       active_id, _ = popup.create(signature, {
         ['line'] = win_pos[1],
         ['col'] = win_pos[2] + 1,
         ['minheight'] = 0,
-        ['minwidth'] = 0,
+        ['minwidth'] = width - 1,
         ['maxheight'] = 1,
-        ['maxwidth'] = col,
+        ['maxwidth'] = width - 1,
         ['border'] = {0, 0, 0, 1},
         ['borderchars'] = {'▏'},
         ['padding'] = {0, 1, 0, 1},
@@ -67,7 +69,17 @@ function Snipe.snipe()
       })
       vim.api.nvim_win_set_option(active_id, 'wrap', false)
       vim.api.nvim_win_set_option(active_id, 'number', false)
-      -- TODO: add highlighting
+
+      -- Add highlighting
+      local current_bufnr = vim.api.nvim_win_get_buf(0)
+      local bufnr = vim.api.nvim_win_get_buf(active_id)
+      local ft = vim.api.nvim_buf_get_option(current_bufnr, 'ft')
+
+      local lang = ts_parsers.ft_to_lang(ft)
+      if ts_parsers.has_parser(lang) then
+        vim.treesitter.highlighter.new(ts_parsers.get_parser(bufnr, lang))
+      end
+      vim.api.nvim_buf_set_option(bufnr, 'syntax', ft)
       return
     end
     parent = parent:parent()
