@@ -11,30 +11,40 @@ local targets = {
   'method_declaration',
   'function_declaration',
   'function_definition',
+  'local_function',
   'class_declaration',
 }
 
+--- Close current scope window, if any
 local function close()
   if active_id then
     Window.try_close(active_id, false)
     if active_id and vim.api.nvim_win_is_valid(active_id + 1) then
-      Window.try_close(active_id + 1, false) -- popup seems to create two windows
+      -- popup seems to create two windows
+      Window.try_close(active_id + 1, false)
     end
     active_id = nil
   end
 end
 
-function Snipe.snipe()
-  close()
+--- Gets the signature in the current scope window, if any
+local function get_current_signature()
+  local bufnr = vim.api.nvim_win_get_buf(active_id)
+  return vim.api.nvim_buf_get_lines(bufnr, 0, 1, false)[1]
+end
 
+--- Creates a popup window showing the parent scope. Returns true if active
+--- window is valid. Otherwise, returns false and expects the window to be
+--- closed by the caller.
+local function create_scope_popup()
   local node = ts_utils.get_node_at_cursor();
   if not node then
-    return
+    return false
   end
 
   local parent = node:parent();
   if not parent then
-    return
+    return false
   end
 
   while parent and not (parent:type() == 'program') do
@@ -42,19 +52,29 @@ function Snipe.snipe()
       local row, _, _ = parent:start()
       local signature = ts_utils.get_node_text(parent, 0)[1]
 
+      if active_id then
+        local current_signature = get_current_signature()
+        current_signature = string.gsub(current_signature, '^%s*(.-)%s*$', '%1')
+        if current_signature == signature then
+          return true
+        end
+      end
+
       -- Don't show scope if first line
       if vim.fn.winline() == 1 then
-        return
+        return false
       end
       -- Only show scope if signature is above the screen
       local pos = vim.api.nvim_win_get_cursor(0)
       if pos[1] - vim.fn.winline() <= row then
-        return
+        return false
       end
 
       local win_pos = vim.api.nvim_win_get_position(0)
       local width = vim.api.nvim_win_get_width(0)
 
+      -- Close current active scope window before creating
+      close()
       active_id, _ = popup.create(signature, {
         ['line'] = win_pos[1],
         ['col'] = win_pos[2] + 1,
@@ -70,7 +90,7 @@ function Snipe.snipe()
       vim.api.nvim_win_set_option(active_id, 'wrap', false)
       vim.api.nvim_win_set_option(active_id, 'number', false)
 
-      -- Add highlighting
+      -- Add highlighting, using treesitter if possible
       local current_bufnr = vim.api.nvim_win_get_buf(0)
       local bufnr = vim.api.nvim_win_get_buf(active_id)
       local ft = vim.api.nvim_buf_get_option(current_bufnr, 'ft')
@@ -80,9 +100,16 @@ function Snipe.snipe()
         vim.treesitter.highlighter.new(ts_parsers.get_parser(bufnr, lang))
       end
       vim.api.nvim_buf_set_option(bufnr, 'syntax', ft)
-      return
+      return true
     end
     parent = parent:parent()
+  end
+  return false
+end
+
+function Snipe.snipe()
+  if not create_scope_popup() then
+    close()
   end
 end
 
