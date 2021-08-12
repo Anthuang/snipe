@@ -17,13 +17,13 @@ function M.close(win_id)
   return win_id
 end
 
-function M.create_popup(signature)
+function M.create_popup(win_id, signature)
   local win_pos = vim.api.nvim_win_get_position(0)
   local width = vim.api.nvim_win_get_width(0)
 
   -- Close current active scope window before creating
-  M.close()
-  local win_id, _ = popup.create(signature, {
+  M.close(win_id)
+  local new_win_id, _ = popup.create(signature, {
     ['line'] = win_pos[1],
     ['col'] = win_pos[2] + 1,
     ['minheight'] = 0,
@@ -35,12 +35,12 @@ function M.create_popup(signature)
     ['padding'] = {0, 1, 0, 1},
     ['enter'] = false,
   })
-  vim.api.nvim_win_set_option(win_id, 'wrap', false)
-  vim.api.nvim_win_set_option(win_id, 'number', false)
+  vim.api.nvim_win_set_option(new_win_id, 'wrap', false)
+  vim.api.nvim_win_set_option(new_win_id, 'number', false)
 
   -- Add highlighting, using treesitter if possible
   local current_bufnr = vim.api.nvim_win_get_buf(0)
-  local bufnr = vim.api.nvim_win_get_buf(win_id)
+  local bufnr = vim.api.nvim_win_get_buf(new_win_id)
   local ft = vim.api.nvim_buf_get_option(current_bufnr, 'ft')
 
   local lang = ts_parsers.ft_to_lang(ft)
@@ -49,7 +49,7 @@ function M.create_popup(signature)
   end
   vim.api.nvim_buf_set_option(bufnr, 'syntax', ft)
 
-  return win_id
+  return new_win_id
 end
 
 return M
