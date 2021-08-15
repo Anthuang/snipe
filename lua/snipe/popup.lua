@@ -24,7 +24,7 @@ function M.create_popup(win_id, signature, full)
   -- Close current active scope window before creating
   M.close(win_id)
 
-  height = #signature
+  local height = #signature
   if not full then
     height = 1
   end

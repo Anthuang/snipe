@@ -63,7 +63,6 @@ local function parse_parent(parent)
   -- Check if the signature is the same
   if active_id then
     local match = true
-    print(#active_signature, #signature)
     if #active_signature == #signature then
       for i = 1, #signature do
         if string.gsub(active_signature[i], "^%s*(.-)%s*$", "%1") ~= signature[i] then
