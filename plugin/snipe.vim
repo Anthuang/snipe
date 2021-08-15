@@ -1,18 +1,9 @@
-fun! Snipe()
-  lua require("snipe").snipe()
-endfunction
-
-fun! SnipeToggle()
-  lua require("snipe").toggle()
-endfunction
-
-fun! SnipeClose()
-  lua require("snipe").close()
-endfunction
-
 augroup Snipe
   autocmd!
-  autocmd WinScrolled * call Snipe()
-  autocmd BufLeave,BufWinLeave * call SnipeClose()
+  autocmd WinScrolled * lua require'snipe'.snipe()
+  autocmd BufLeave,BufWinLeave * lua require'snipe'.close()
 augroup END
 
+command! Snipe lua require'snipe'.snipe()
+command! SnipeToggle lua require'snipe'.toggle()
+command! SnipeClose lua require'snipe'.close()
