@@ -17,18 +17,23 @@ function M.close(win_id)
   return win_id
 end
 
-function M.create_popup(win_id, signature)
+function M.create_popup(win_id, signature, full)
   local win_pos = vim.api.nvim_win_get_position(0)
   local width = vim.api.nvim_win_get_width(0)
 
   -- Close current active scope window before creating
   M.close(win_id)
+
+  height = #signature
+  if not full then
+    height = 1
+  end
   local new_win_id, _ = popup.create(signature, {
     line = win_pos[1],
     col = win_pos[2] + 1,
     minheight = 0,
     minwidth = width - 1,
-    maxheight = 1,
+    maxheight = height,
     maxwidth = width - 1,
     border = { 0, 0, 0, 1 },
     borderchars = { "▏" },

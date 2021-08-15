@@ -6,11 +6,40 @@ local config = require("snipe.config")
 local Snipe = {}
 
 local active_id = nil
+local active_signature = nil
+local full = false
 
---- Gets the signature in the current scope window, if any
-local function get_current_signature()
-  local bufnr = vim.api.nvim_win_get_buf(active_id)
-  return vim.api.nvim_buf_get_lines(bufnr, 0, 1, false)[1]
+--- Merge ranges
+local function merge_range(start_row, end_row, child)
+  local child_start_row, _, child_end_row, _ = ts_utils.get_node_range(child)
+  if child_start_row > end_row then
+    return start_row, end_row
+  end
+  if child_end_row > end_row then
+    return start_row, child_end_row
+  end
+  return start_row, end_row
+end
+
+--- Gets the current signature. Will get the signature from the scope window,
+--- if it exists.
+local function get_current_signature(parent)
+  -- Merge ranges with children
+  local start_row, _, _ = parent:start()
+  local end_row = start_row
+  for _, child in ipairs(ts_utils.get_named_children(parent)) do
+    if child:type() == "parameters" then
+      start_row, end_row = merge_range(start_row, end_row, child)
+    end
+  end
+
+  -- Return just the signature
+  local lines = {}
+  local signature = ts_utils.get_node_text(parent, 0)
+  for i = 1, end_row - start_row + 1 do
+    table.insert(lines, signature[i])
+  end
+  return lines
 end
 
 --- Parses a parent and shows its scope.
@@ -19,7 +48,7 @@ end
 --- expects the caller to try the parent of this node, or give up.
 local function parse_parent(parent)
   local row, _, _ = parent:start()
-  local signature = ts_utils.get_node_text(parent, 0)[1]
+  local signature = get_current_signature(parent)
 
   -- Don't show scope if first line
   if vim.fn.winline() == 1 then
@@ -33,14 +62,22 @@ local function parse_parent(parent)
 
   -- Check if the signature is the same
   if active_id then
-    local current_signature = get_current_signature()
-    current_signature = string.gsub(current_signature, "^%s*(.-)%s*$", "%1")
-    if current_signature == signature then
-      return true
+    local match = true
+    print(#active_signature, #signature)
+    if #active_signature == #signature then
+      for i = 1, #signature do
+        if string.gsub(active_signature[i], "^%s*(.-)%s*$", "%1") ~= signature[i] then
+          match = false
+        end
+      end
+      if match then
+        return true
+      end
     end
   end
 
-  active_id = popup.create_popup(active_id, signature)
+  active_id = popup.create_popup(active_id, signature, full)
+  active_signature = signature
   return true
 end
 
@@ -79,6 +116,13 @@ local function check_ft()
   return true
 end
 
+local function close_popup()
+  if not popup.close(active_id) then
+    active_id = nil
+    active_signature = nil
+  end
+end
+
 function Snipe.setup(options)
   config.setup(options)
 end
@@ -88,7 +132,17 @@ function Snipe.snipe()
     return
   end
   if not show_scope() then
-    active_id = popup.close(active_id)
+    close_popup()
+  end
+end
+
+function Snipe.toggle()
+  if not check_ft() then
+    return
+  end
+  full = not full
+  if not show_scope() then
+    close_popup()
   end
 end
 
@@ -96,7 +150,7 @@ function Snipe.close()
   if not check_ft() then
     return
   end
-  active_id = popup.close(active_id)
+  close_popup()
 end
 
 return Snipe
