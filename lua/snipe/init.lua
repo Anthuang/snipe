@@ -10,7 +10,7 @@ local active_signature = nil
 local full = false
 
 --- Merge ranges
-local function merge_range(start_row, end_row, child)
+local function merge_ts_ranges(start_row, end_row, child)
   local child_start_row, _, child_end_row, _ = ts_utils.get_node_range(child)
   if child_start_row > end_row then
     return start_row, end_row
@@ -28,9 +28,10 @@ local function get_current_signature(parent)
   local start_row, _, _ = parent:start()
   local end_row = start_row
   for _, child in ipairs(ts_utils.get_named_children(parent)) do
-    if child:type() == "parameters" then
-      start_row, end_row = merge_range(start_row, end_row, child)
+    if child:type() == "block" then
+      break
     end
+    start_row, end_row = merge_ts_ranges(start_row, end_row, child)
   end
 
   -- Return just the signature
