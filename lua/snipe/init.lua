@@ -43,6 +43,11 @@ local function get_current_signature(parent)
   return lines
 end
 
+--- Return if the cursor is on top of the scope
+local function cursor_on_scope(signature)
+  return (vim.fn.winline() == 1 and not full) or (vim.fn.winline() <= #signature and full)
+end
+
 --- Parses a parent and shows its scope.
 ---
 --- Returns true if the active window is valid. Otherwise, returns false and
@@ -51,8 +56,8 @@ local function parse_parent(parent)
   local row, _, _ = parent:start()
   local signature = get_current_signature(parent)
 
-  -- Don't show scope if first line
-  if vim.fn.winline() == 1 then
+  -- Don't show scope if cursor is on the scope
+  if cursor_on_scope(signature) then
     return false
   end
   -- Only show scope if signature is above the screen
@@ -117,7 +122,14 @@ local function check_ft()
 end
 
 local function close_popup()
-  if not popup.close(active_id) then
+  popup.close(active_id)
+  active_id = nil
+  active_signature = nil
+end
+
+local function maybe_close_popup()
+  if active_signature and cursor_on_scope(active_signature) then
+    popup.close(active_id)
     active_id = nil
     active_signature = nil
   end
@@ -151,6 +163,13 @@ function Snipe.close()
     return
   end
   close_popup()
+end
+
+function Snipe.maybe_close()
+  if not check_ft() then
+    return
+  end
+  maybe_close_popup()
 end
 
 return Snipe

@@ -12,9 +12,7 @@ function M.close(win_id)
       -- popup seems to create two windows
       Window.try_close(win_id + 1, false)
     end
-    return nil
   end
-  return win_id
 end
 
 function M.create_popup(win_id, signature, full)

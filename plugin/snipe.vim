@@ -1,6 +1,7 @@
 augroup Snipe
   autocmd!
   autocmd WinScrolled * lua require'snipe'.snipe()
+  autocmd CursorMoved * lua require'snipe'.maybe_close()
   autocmd BufLeave,BufWinLeave * lua require'snipe'.close()
 augroup END
 
