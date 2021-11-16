@@ -14,4 +14,9 @@ function M.merge_ts_ranges(start_row, end_row, child)
   return start_row, end_row
 end
 
+--- Trims whitespaces off both ends of a string
+function M.trim_string(s)
+  return string.gsub(s, "^%s*(.-)%s*$", "%1")
+end
+
 return M
