@@ -12,12 +12,6 @@ local function check_ft()
   return true
 end
 
-local function close_popup()
-  popup.close(scope.active_id)
-  scope.active_id = nil
-  scope.active_signature = nil
-end
-
 local function maybe_close_popup()
   if scope.active_signature and scope.cursor_on_scope(scope.active_signature) then
     popup.close(scope.active_id)
@@ -35,7 +29,7 @@ function Snipe.snipe()
     return
   end
   if not scope.show() then
-    close_popup()
+    scope.hide()
   end
 end
 
@@ -45,7 +39,7 @@ function Snipe.toggle()
   end
   scope.full = not scope.full
   if not scope.show() then
-    close_popup()
+    scope.hide()
   end
 end
 
@@ -53,7 +47,7 @@ function Snipe.close()
   if not check_ft() then
     return
   end
-  close_popup()
+  scope.hide()
 end
 
 function Snipe.maybe_close()

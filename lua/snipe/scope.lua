@@ -102,4 +102,11 @@ function M.show()
   return false
 end
 
+--- Hides the popup window
+function M.hide()
+  popup.close(M.active_id)
+  M.active_id = nil
+  M.active_signature = nil
+end
+
 return M
